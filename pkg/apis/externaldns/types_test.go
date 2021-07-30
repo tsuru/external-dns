@@ -126,6 +126,7 @@ var (
 		OCPRouterName:               "default",
 		IBMCloudProxied:             false,
 		IBMCloudConfigFile:          "/etc/kubernetes/ibmcloud.json",
+		GloboDNSAuthMethod:          "static",
 	}
 
 	overriddenConfig = &Config{
@@ -231,6 +232,13 @@ var (
 		RFC2136BatchChangeSize:      100,
 		IBMCloudProxied:             true,
 		IBMCloudConfigFile:          "ibmcloud.json",
+		GloboDNSURL:                 "https://gdns.example.com",
+		GloboDNSToken:               "my-secret-token",
+		GloboDNSAuthMethod:          "oauth",
+		GloboDNSOAuthTokenURL:       "https://id.example.com/token",
+		GloboDNSOAuthClientID:       "oauth-client-id",
+		GloboDNSOAuthClientSecret:   "oauth-client-secret",
+		GloboDNSDocumentsPerPage:    1000,
 	}
 )
 
@@ -364,6 +372,13 @@ func TestParseFlags(t *testing.T) {
 				"--rfc2136-batch-change-size=100",
 				"--ibmcloud-proxied",
 				"--ibmcloud-config-file=ibmcloud.json",
+				"--globodns-url=https://gdns.example.com",
+				"--globodns-token=my-secret-token",
+				"--globodns-auth-method=oauth",
+				"--globodns-oauth-token-url=https://id.example.com/token",
+				"--globodns-oauth-client-id=oauth-client-id",
+				"--globodns-oauth-client-secret=oauth-client-secret",
+				"--globodns-documents-per-page=1000",
 			},
 			envVars:  map[string]string{},
 			expected: overriddenConfig,
@@ -474,6 +489,13 @@ func TestParseFlags(t *testing.T) {
 				"EXTERNAL_DNS_RFC2136_BATCH_CHANGE_SIZE":       "100",
 				"EXTERNAL_DNS_IBMCLOUD_PROXIED":                "1",
 				"EXTERNAL_DNS_IBMCLOUD_CONFIG_FILE":            "ibmcloud.json",
+				"EXTERNAL_DNS_GLOBODNS_URL":                    "https://gdns.example.com",
+				"EXTERNAL_DNS_GLOBODNS_TOKEN":                  "my-secret-token",
+				"EXTERNAL_DNS_GLOBODNS_AUTH_METHOD":            "oauth",
+				"EXTERNAL_DNS_GLOBODNS_OAUTH_TOKEN_URL":        "https://id.example.com/token",
+				"EXTERNAL_DNS_GLOBODNS_OAUTH_CLIENT_ID":        "oauth-client-id",
+				"EXTERNAL_DNS_GLOBODNS_OAUTH_CLIENT_SECRET":    "oauth-client-secret",
+				"EXTERNAL_DNS_GLOBODNS_DOCUMENTS_PER_PAGE":     "1000",
 			},
 			expected: overriddenConfig,
 		},

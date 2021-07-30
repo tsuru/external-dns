@@ -49,6 +49,7 @@ import (
 	"sigs.k8s.io/external-dns/provider/dyn"
 	"sigs.k8s.io/external-dns/provider/exoscale"
 	"sigs.k8s.io/external-dns/provider/gandi"
+	"sigs.k8s.io/external-dns/provider/globodns"
 	"sigs.k8s.io/external-dns/provider/godaddy"
 	"sigs.k8s.io/external-dns/provider/google"
 	"sigs.k8s.io/external-dns/provider/ibmcloud"
@@ -135,6 +136,13 @@ func main() {
 		RequestTimeout:                 cfg.RequestTimeout,
 		DefaultTargets:                 cfg.DefaultTargets,
 		OCPRouterName:                  cfg.OCPRouterName,
+		GloboDNSURL:                    cfg.GloboDNSURL,
+		GloboDNSToken:                  cfg.GloboDNSToken,
+		GloboDNSAuthMethod:             cfg.GloboDNSAuthMethod,
+		GloboDNSOAuthTokenURL:          cfg.GloboDNSOAuthTokenURL,
+		GloboDNSOAuthClientID:          cfg.GloboDNSOAuthClientID,
+		GloboDNSOAuthClientSecret:      cfg.GloboDNSOAuthClientSecret,
+		GloboDNSDocumentsPerPage:       cfg.GloboDNSDocumentsPerPage,
 	}
 
 	// Lookup all the selected sources by names and pass them the desired configuration.
@@ -329,6 +337,22 @@ func main() {
 		p, err = ibmcloud.NewIBMCloudProvider(cfg.IBMCloudConfigFile, domainFilter, zoneIDFilter, endpointsSource, cfg.IBMCloudProxied, cfg.DryRun)
 	case "safedns":
 		p, err = safedns.NewSafeDNSProvider(domainFilter, cfg.DryRun)
+	case "globodns":
+		p, err = globodns.NewGloboDNSProvider(
+			globodns.GloboDNSConfig{
+				DomainFilter:      domainFilter,
+				ZoneFilter:        zoneNameFilter,
+				ZoneIDFilter:      zoneIDFilter,
+				URL:               cfg.GloboDNSURL,
+				Token:             cfg.GloboDNSToken,
+				AuthMethod:        cfg.GloboDNSAuthMethod,
+				OAuthTokenURL:     cfg.GloboDNSOAuthTokenURL,
+				OAuthClientID:     cfg.GloboDNSOAuthClientID,
+				OAuthClientSecret: cfg.GloboDNSOAuthClientSecret,
+				DocumentsPerPage:  cfg.GloboDNSDocumentsPerPage,
+				DryRun:            cfg.DryRun,
+			},
+		)
 	default:
 		log.Fatalf("unknown dns provider: %s", cfg.Provider)
 	}

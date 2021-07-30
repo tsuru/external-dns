@@ -72,6 +72,13 @@ type Config struct {
 	RequestTimeout                 time.Duration
 	DefaultTargets                 []string
 	OCPRouterName                  string
+	GloboDNSURL                    string
+	GloboDNSToken                  string
+	GloboDNSAuthMethod             string
+	GloboDNSOAuthTokenURL          string
+	GloboDNSOAuthClientID          string
+	GloboDNSOAuthClientSecret      string
+	GloboDNSDocumentsPerPage       int
 }
 
 // ClientGenerator provides clients

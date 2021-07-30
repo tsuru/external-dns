@@ -189,6 +189,14 @@ type Config struct {
 	OCPRouterName                     string
 	IBMCloudProxied                   bool
 	IBMCloudConfigFile                string
+	GloboDNSURL                       string
+	GloboDNSToken                     string `secure:"yes"`
+	GloboDNSAuthMethod                string
+	GloboDNSOAuthAuthURL              string
+	GloboDNSOAuthTokenURL             string
+	GloboDNSOAuthClientID             string
+	GloboDNSOAuthClientSecret         string `secure:"yes"`
+	GloboDNSDocumentsPerPage          int
 }
 
 var defaultConfig = &Config{
@@ -320,6 +328,14 @@ var defaultConfig = &Config{
 	GoDaddyOTE:                  false,
 	IBMCloudProxied:             false,
 	IBMCloudConfigFile:          "/etc/kubernetes/ibmcloud.json",
+	GloboDNSURL:                 "",
+	GloboDNSToken:               "",
+	GloboDNSAuthMethod:          "static",
+	GloboDNSOAuthAuthURL:        "",
+	GloboDNSOAuthTokenURL:       "",
+	GloboDNSOAuthClientID:       "",
+	GloboDNSOAuthClientSecret:   "",
+	GloboDNSDocumentsPerPage:    0,
 }
 
 // NewConfig returns new Config object
@@ -407,7 +423,7 @@ func (cfg *Config) ParseFlags(args []string) error {
 	app.Flag("default-targets", "Set globally default IP address that will apply as a target instead of source addresses. Specify multiple times for multiple targets (optional)").StringsVar(&cfg.DefaultTargets)
 
 	// Flags related to providers
-	app.Flag("provider", "The DNS provider where the DNS records will be created (required, options: aws, aws-sd, godaddy, google, azure, azure-dns, azure-private-dns, bluecat, cloudflare, rcodezero, digitalocean, dnsimple, akamai, infoblox, dyn, designate, coredns, skydns, ibmcloud, inmemory, ovh, pdns, oci, exoscale, linode, rfc2136, ns1, transip, vinyldns, rdns, scaleway, vultr, ultradns, gandi, safedns)").Required().PlaceHolder("provider").EnumVar(&cfg.Provider, "aws", "aws-sd", "google", "azure", "azure-dns", "azure-private-dns", "alibabacloud", "cloudflare", "rcodezero", "digitalocean", "dnsimple", "akamai", "infoblox", "dyn", "designate", "coredns", "skydns", "ibmcloud", "inmemory", "ovh", "pdns", "oci", "exoscale", "linode", "rfc2136", "ns1", "transip", "vinyldns", "rdns", "scaleway", "vultr", "ultradns", "godaddy", "bluecat", "gandi", "safedns")
+	app.Flag("provider", "The DNS provider where the DNS records will be created (required, options: aws, aws-sd, godaddy, google, azure, azure-dns, azure-private-dns, bluecat, cloudflare, rcodezero, digitalocean, dnsimple, akamai, infoblox, dyn, designate, coredns, skydns, ibmcloud, inmemory, ovh, pdns, oci, exoscale, linode, rfc2136, ns1, transip, vinyldns, rdns, scaleway, vultr, ultradns, gandi, safedns)").Required().PlaceHolder("provider").EnumVar(&cfg.Provider, "aws", "aws-sd", "google", "azure", "azure-dns", "azure-private-dns", "alibabacloud", "cloudflare", "rcodezero", "digitalocean", "dnsimple", "akamai", "infoblox", "dyn", "designate", "coredns", "skydns", "ibmcloud", "inmemory", "ovh", "pdns", "oci", "exoscale", "linode", "rfc2136", "ns1", "transip", "vinyldns", "rdns", "scaleway", "vultr", "ultradns", "godaddy", "bluecat", "gandi", "safedns", "globodns")
 	app.Flag("domain-filter", "Limit possible target zones by a domain suffix; specify multiple times for multiple domains (optional)").Default("").StringsVar(&cfg.DomainFilter)
 	app.Flag("exclude-domains", "Exclude subdomains (optional)").Default("").StringsVar(&cfg.ExcludeDomains)
 	app.Flag("regex-domain-filter", "Limit possible domains and target zones by a Regex filter; Overrides domain-filter (optional)").Default(defaultConfig.RegexDomainFilter.String()).RegexpVar(&cfg.RegexDomainFilter)
@@ -517,6 +533,15 @@ func (cfg *Config) ParseFlags(args []string) error {
 	// Flags related to TransIP provider
 	app.Flag("transip-account", "When using the TransIP provider, specify the account name (required when --provider=transip)").Default(defaultConfig.TransIPAccountName).StringVar(&cfg.TransIPAccountName)
 	app.Flag("transip-keyfile", "When using the TransIP provider, specify the path to the private key file (required when --provider=transip)").Default(defaultConfig.TransIPPrivateKeyFile).StringVar(&cfg.TransIPPrivateKeyFile)
+
+	// Flags related to GloboDNS provider
+	app.Flag("globodns-url", "When using the GloboDNS provider, specify the URL of GloboDNS server (required when --provider=globodns)").Default(defaultConfig.GloboDNSURL).StringVar(&cfg.GloboDNSURL)
+	app.Flag("globodns-token", "When using the GloboDNS provider, specify the authentication token (required when --provider=globodns)").Default(defaultConfig.GloboDNSToken).StringVar(&cfg.GloboDNSToken)
+	app.Flag("globodns-auth-method", "When using the GloboDNS, specify the authentication method (required when --provider=globodns)").Default(defaultConfig.GloboDNSAuthMethod).EnumVar(&cfg.GloboDNSAuthMethod, "static", "oauth")
+	app.Flag("globodns-oauth-token-url", "When using the GloboDNS provider, specify the OAuth2 token URL").Default(defaultConfig.GloboDNSOAuthTokenURL).StringVar(&cfg.GloboDNSOAuthTokenURL)
+	app.Flag("globodns-oauth-client-id", "When using the GloboDNS provider, specify the OAuth2 client ID (required when --globodns-auth-method=oauth)").Default(defaultConfig.GloboDNSOAuthClientID).StringVar(&cfg.GloboDNSOAuthClientID)
+	app.Flag("globodns-oauth-client-secret", "When using the GloboDNS provider, specify the OAuth2 client secret (required when --globodns-auth-method=oauth)").Default(defaultConfig.GloboDNSOAuthClientSecret).StringVar(&cfg.GloboDNSOAuthClientSecret)
+	app.Flag("globodns-documents-per-page", "When using the GloboDNS, specify the number of document into a page").Default(strconv.Itoa(defaultConfig.GloboDNSDocumentsPerPage)).IntVar(&cfg.GloboDNSDocumentsPerPage)
 
 	// Flags related to policies
 	app.Flag("policy", "Modify how DNS records are synchronized between sources and providers (default: sync, options: sync, upsert-only, create-only)").Default(defaultConfig.Policy).EnumVar(&cfg.Policy, "sync", "upsert-only", "create-only")
