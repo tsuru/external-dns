@@ -141,24 +141,33 @@ func (p *GloboDNSProvider) Records(ctx context.Context) (eps []*endpoint.Endpoin
 	return eps, nil
 }
 
-func (p *GloboDNSProvider) ApplyChanges(ctx context.Context, changes *plan.Changes) (err error) {
-	if err := p.createRecords(ctx, changes.Create); err != nil {
+func (p *GloboDNSProvider) ApplyChanges(ctx context.Context, changes *plan.Changes) error {
+	added, err := p.createRecords(ctx, changes.Create)
+	if err != nil {
 		return err
 	}
 
-	if err := p.deleteRecords(ctx, changes.Delete); err != nil {
+	deleted, err := p.deleteRecords(ctx, changes.Delete)
+	if err != nil {
 		return err
 	}
 
-	if err := p.updateRecords(ctx, changes.UpdateOld, changes.UpdateNew); err != nil {
+	updated, err := p.updateRecords(ctx, changes.UpdateOld, changes.UpdateNew)
+	if err != nil {
 		return err
 	}
 
-	if _, err := p.Bind.Export(ctx); err != nil {
-		return err
+	nchanges := added + deleted + updated // number of total changes
+	if nchanges == 0 {
+		return nil
 	}
 
-	return nil
+	sch, err := p.Bind.Export(ctx)
+	if err == nil {
+		log.Infof("GloboDNS export scheduled to %s", sch.ScheduleDate.String())
+	}
+
+	return err
 }
 
 func (p *GloboDNSProvider) PropertyValuesEqual(name string, previous string, current string) bool {
@@ -205,21 +214,24 @@ func (p *GloboDNSProvider) Domains(ctx context.Context) (ds []gdns.Domain, err e
 	return ds, nil
 }
 
-func (p *GloboDNSProvider) createRecords(ctx context.Context, eps []*endpoint.Endpoint) error {
+func (p *GloboDNSProvider) createRecords(ctx context.Context, eps []*endpoint.Endpoint) (int, error) {
+	var changes int
 	for _, ep := range eps {
 		d, err := p.getDomainFromCache(ep.DNSName)
 		if err != nil {
-			return err
+			return 0, err
 		}
 
 		for _, r := range newRecord(d, ep) {
 			if err := p.createRecord(ctx, d, r); err != nil {
-				return err
+				return 0, err
 			}
+
+			changes++
 		}
 	}
 
-	return nil
+	return changes, nil
 }
 
 func (p *GloboDNSProvider) createRecord(ctx context.Context, d *gdns.Domain, r *gdns.Record) error {
@@ -232,21 +244,24 @@ func (p *GloboDNSProvider) createRecord(ctx context.Context, d *gdns.Domain, r *
 	return nil
 }
 
-func (p *GloboDNSProvider) deleteRecords(ctx context.Context, eps []*endpoint.Endpoint) error {
+func (p *GloboDNSProvider) deleteRecords(ctx context.Context, eps []*endpoint.Endpoint) (int, error) {
+	var changes int
 	for _, ep := range eps {
 		d, err := p.getDomainFromCache(ep.DNSName)
 		if err != nil {
-			return err
+			return 0, err
 		}
 
 		for _, r := range newRecord(d, ep) {
 			if err = p.deleteRecord(ctx, d, r); err != nil {
-				return err
+				return 0, err
 			}
+
+			changes++
 		}
 	}
 
-	return nil
+	return changes, nil
 }
 
 func (p *GloboDNSProvider) deleteRecord(ctx context.Context, d *gdns.Domain, r *gdns.Record) error {
@@ -264,45 +279,52 @@ func (p *GloboDNSProvider) deleteRecord(ctx context.Context, d *gdns.Domain, r *
 	return nil
 }
 
-func (p *GloboDNSProvider) updateRecords(ctx context.Context, olds, news []*endpoint.Endpoint) error {
+func (p *GloboDNSProvider) updateRecords(ctx context.Context, olds, news []*endpoint.Endpoint) (int, error) {
+	var changes int
 	for i := range news {
 		oldEP, newEP := olds[i], news[i]
 
 		if oldEP.DNSName != newEP.DNSName {
-			return fmt.Errorf("globodns provider does not support changing DNS name (from: %s, to: %s)", oldEP.DNSName, newEP.DNSName)
+			return 0, fmt.Errorf("globodns provider does not support changing DNS name (from: %s, to: %s)", oldEP.DNSName, newEP.DNSName)
 		}
 
 		if oldEP.RecordType != newEP.RecordType {
-			return fmt.Errorf("globodns provider does not support changing record type (from: %s, to: %s)", oldEP.RecordType, newEP.RecordType)
+			return 0, fmt.Errorf("globodns provider does not support changing record type (from: %s, to: %s)", oldEP.RecordType, newEP.RecordType)
 		}
 
 		d, err := p.getDomainFromCache(oldEP.DNSName)
 		if err != nil {
-			return err
+			return 0, err
 		}
 
 		oldRecords, newRecords := newRecord(d, oldEP), newRecord(d, newEP)
 
 		for _, r := range filterRecordsToCreate(oldRecords, newRecords) {
 			if err = p.createRecord(ctx, d, r); err != nil {
-				return err
+				return 0, err
 			}
+
+			changes++
 		}
 
 		for _, r := range filterRecordsToRemove(oldRecords, newRecords) {
 			if err = p.deleteRecord(ctx, d, r); err != nil {
-				return err
+				return 0, err
 			}
+
+			changes++
 		}
 
 		for _, r := range filterRecordsToUpdate(oldRecords, newRecords) {
 			if err = p.updateRecord(ctx, d, r); err != nil {
-				return err
+				return 0, err
 			}
+
+			changes++
 		}
 	}
 
-	return nil
+	return changes, nil
 }
 
 func (p *GloboDNSProvider) updateRecord(ctx context.Context, d *gdns.Domain, r *gdns.Record) error {
