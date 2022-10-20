@@ -1343,6 +1343,8 @@ github.com/tsaarni/certyaml v0.6.2/go.mod h1:fMHgNcBc7APv85tYQQ5186Qx+OeUDmLbGHZ
 github.com/tsaarni/x500dn v0.0.0-20210331182804-14283c7f5a16/go.mod h1:RquKZ5rERbzqRQDFuh2zsgR1W1FH006YRw2pHIuMzvw=
 github.com/tsuru/go-globodnsclient v0.0.0-20211101195600-12c317cc0b36 h1:UJWgDX0lNcP8bm0TYIyu7M4O7/MCIyOFGF631Bl+5fo=
 github.com/tsuru/go-globodnsclient v0.0.0-20211101195600-12c317cc0b36/go.mod h1:hq/TFlS9LwtanhnxFS4V91kYvLfAuJlzU3Yxk6JbJs8=
+github.com/tsuru/go-globodnsclient v0.0.0-20221020145206-5cad801ee204 h1:zpBs7q08I2m38xZwgdoEoWJMQrbhMFWaECyxpZAwSOE=
+github.com/tsuru/go-globodnsclient v0.0.0-20221020145206-5cad801ee204/go.mod h1:hq/TFlS9LwtanhnxFS4V91kYvLfAuJlzU3Yxk6JbJs8=
 github.com/tv42/httpunix v0.0.0-20150427012821-b75d8614f926/go.mod h1:9ESjWnEqriFuLhtthL60Sar/7RFoluCcXsuvEwTV5KM=
 github.com/ugorji/go v1.1.4/go.mod h1:uQMGLiO92mf5W77hV/PUCpI3pbzQx3CRekS0kk+RGrc=
 github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8/go.mod h1:VFNgLljTbGfSG7qAOspJ7OScBnGdDN/yBr0sguwnwf0=

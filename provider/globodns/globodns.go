@@ -30,6 +30,7 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 
 	"sigs.k8s.io/external-dns/endpoint"
+	"sigs.k8s.io/external-dns/pkg/apis/externaldns"
 	"sigs.k8s.io/external-dns/plan"
 	"sigs.k8s.io/external-dns/provider"
 )
@@ -59,6 +60,8 @@ func NewGloboDNSProvider(cfg GloboDNSConfig) (provider.Provider, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	client.SetUserAgent(fmt.Sprintf("external-dns/%s (go-globodnsclient)", externaldns.Version))
 
 	if cfg.AuthMethod == "static" {
 		client.SetToken(cfg.Token)
